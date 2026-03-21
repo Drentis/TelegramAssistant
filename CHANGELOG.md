@@ -4,6 +4,16 @@
 
 ---
 
+## [1.0.3] - 2026-03-21
+
+### 🐛 Исправления
+
+**🔗 Ссылки на GitHub:
+- Исправлены все ссылки с `main` на `master` (raw.githubusercontent.com)
+- Обновлены ссылки в README.md, INSTALL.md, QUICKSTART.md, deploy.sh
+
+---
+
 ## [1.0.2] - 2026-03-21
 
 ### 🐛 Исправления

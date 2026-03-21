@@ -427,7 +427,7 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.2" ;;
+    version) echo "TelegramAssistant v1.0.3" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF
