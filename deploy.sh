@@ -125,8 +125,8 @@ echo ""
 # Ввод токена бота (обычный ввод, не скрытый)
 while true; do
     echo -en "${YELLOW}   Введите токен бота: ${NC}"
-    read BOT_TOKEN_INPUT
-    
+    read BOT_TOKEN_INPUT < /dev/tty
+
     if [[ "$BOT_TOKEN_INPUT" == *":"* ]]; then
         echo -e "${GREEN}   ✓ Токен принят${NC}"
         break
@@ -150,7 +150,7 @@ echo ""
 # Ввод API ключа
 while true; do
     echo -en "${YELLOW}   Введите API ключ погоды (или нажмите Enter для пропуска): ${NC}"
-    read WEATHER_KEY_INPUT
+    read WEATHER_KEY_INPUT < /dev/tty
 
     if [[ -z "$WEATHER_KEY_INPUT" ]]; then
         echo -e "${YELLOW}   ⊘ Пропущено (погода будет недоступна)${NC}"
@@ -177,7 +177,7 @@ echo ""
 
 while true; do
     echo -en "${YELLOW}   Введите Telegram ID администратора (или Enter для пропуска): ${NC}"
-    read ADMIN_ID_INPUT
+    read ADMIN_ID_INPUT < /dev/tty
 
     if [[ -z "$ADMIN_ID_INPUT" ]]; then
         echo -e "${YELLOW}   ⊘ Пропущено (админ-панель будет недоступна)${NC}"
@@ -204,7 +204,7 @@ echo ""
 
 while true; do
     echo -en "${YELLOW}   Введите GitHub токен (или Enter для пропуска): ${NC}"
-    read GITHUB_TOKEN_INPUT
+    read GITHUB_TOKEN_INPUT < /dev/tty
 
     if [[ -z "$GITHUB_TOKEN_INPUT" ]]; then
         echo -e "${YELLOW}   ⊘ Пропущено (обновление через Telegram будет недоступно)${NC}"
@@ -427,7 +427,7 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.3" ;;
+    version) echo "TelegramAssistant v1.0.4" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF
