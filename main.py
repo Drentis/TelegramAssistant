@@ -2639,7 +2639,7 @@ async def weather_scheduler(bot: Bot):
         async with aiosqlite.connect(db.DB_PATH) as db_conn:
             db_conn.row_factory = aiosqlite.Row
             async with db_conn.execute(
-                "SELECT user_id, weather_city, weather_daily, weather_rain, weather_time FROM category_settings WHERE weather_city != ''"
+                "SELECT user_id, weather_city, weather_daily, weather_rain, weather_time FROM category_settings WHERE weather_city != '' AND weather_city IS NOT NULL"
             ) as cursor:
                 users = await cursor.fetchall()
 
@@ -2647,23 +2647,32 @@ async def weather_scheduler(bot: Bot):
             user_id = user['user_id']
             city = user['weather_city']
             user_time = user['weather_time'] if user['weather_time'] else '06:00'
+            
+            # Преобразуем значения в int (из БД могут приходить как None)
+            weather_daily = bool(user['weather_daily']) if user['weather_daily'] is not None else False
+            weather_rain = bool(user['weather_rain']) if user['weather_rain'] is not None else False
 
             # Проверяем, наступило ли время отправки для этого пользователя
+            # Проверяем диапазон времени (чтобы не пропустить и не отправить повторно)
             if current_time_str == user_time:
                 # Проверяем, не отправляли ли уже сегодня
                 if user_id not in last_sent or last_sent[user_id] != current_date:
-                    # Утренний прогноз (если включено)
-                    if user['weather_daily']:
-                        await send_weather_report(bot, user_id, city)
+                    try:
+                        # Утренний прогноз (если включено)
+                        if weather_daily:
+                            await send_weather_report(bot, user_id, city)
 
-                    # Уведомление о дожде (если включено)
-                    if user['weather_rain']:
-                        await send_rain_alert(bot, user_id, city)
+                        # Уведомление о дожде (если включено)
+                        if weather_rain:
+                            await send_rain_alert(bot, user_id, city)
 
-                    # Отмечаем, что сегодня уже отправили
-                    last_sent[user_id] = current_date
+                        # Отмечаем, что сегодня уже отправили
+                        last_sent[user_id] = current_date
+                    except Exception as e:
+                        # Игнорируем ошибки отправки, но продолжаем работу
+                        pass
 
-        # Сбрасываем счётчик отправленных каждый день в полночь
+        # Сбрасываем счётчик отправленных каждый день в 00:01
         if now.hour == 0 and now.minute == 1:
             last_sent.clear()
 
