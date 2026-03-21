@@ -215,33 +215,6 @@ while true; do
     fi
 done
 
-# Ввод GitHub токена
-echo ""
-echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║           НАСТРОЙКА GITHUB TOKEN                         ║${NC}"
-echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BLUE}║  Токен для обновления бота через Telegram (можно         ║${NC}"
-echo -e "${BLUE}║  пропустить)                                             ║${NC}"
-echo -e "${BLUE}║  Создать: https://github.com/settings/tokens             ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}"
-echo ""
-
-while true; do
-    echo -en "${YELLOW}   Введите GitHub токен (или Enter для пропуска): ${NC}"
-    read GITHUB_TOKEN_INPUT < /dev/tty
-
-    if [[ -z "$GITHUB_TOKEN_INPUT" ]]; then
-        echo -e "${YELLOW}   ⊘ Пропущено (обновление через Telegram будет недоступно)${NC}"
-        break
-    elif [[ "$GITHUB_TOKEN_INPUT" == ghp_* ]] || [[ ${#GITHUB_TOKEN_INPUT} -ge 30 ]]; then
-        echo -e "${GREEN}   ✓ GitHub токен принят${NC}"
-        break
-    else
-        echo -e "${RED}   ❌ Неверный формат! Токен должен начинаться с 'ghp_'${NC}"
-        echo -e "${YELLOW}   Попробуйте ещё раз или нажмите Enter для пропуска${NC}"
-    fi
-done
-
 # Создание .env файла
 echo -e "\n${YELLOW}   Создание файла .env...${NC}"
 
@@ -254,9 +227,6 @@ WEATHER_API_KEY=$WEATHER_KEY_INPUT
 
 # Telegram ID администратора (получить у @userinfobot)
 ADMIN_ID=$ADMIN_ID_INPUT
-
-# GitHub токен (для обновления через Telegram)
-GITHUB_TOKEN=$GITHUB_TOKEN_INPUT
 EOF
 
 chown "$BOT_USER:$BOT_USER" "$BOT_DIR/.env"
@@ -451,7 +421,7 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.7" ;;
+    version) echo "TelegramAssistant v1.0.8" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF

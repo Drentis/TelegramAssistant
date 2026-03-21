@@ -28,7 +28,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from config import BOT_TOKEN, WEATHER_API_KEY, ADMIN_ID, GITHUB_TOKEN
+from config import BOT_TOKEN, WEATHER_API_KEY, ADMIN_ID
 import database as db
 
 
@@ -1884,13 +1884,8 @@ async def handle_admin_update_bot_callback(callback: types.CallbackQuery):
             # Инициализируем git
             subprocess.run(['git', 'init'], cwd=bot_dir, capture_output=True)
 
-            # Добавляем remote с токеном
-            if GITHUB_TOKEN:
-                remote_url = f"https://{GITHUB_TOKEN}@github.com/Drentis/TelegramAssistant.git"
-            else:
-                # Пробуем без токена (для публичных репозиториев)
-                remote_url = "https://github.com/Drentis/TelegramAssistant.git"
-                await callback.message.answer("⚠️ **GITHUB_TOKEN не найден!**\n\nДля обновления через Telegram добавьте токен в .env:\n```\nGITHUB_TOKEN=ghp_xxxxx\n```\nСоздать токен: https://github.com/settings/tokens", parse_mode="Markdown")
+            # Добавляем remote (публичный репозиторий)
+            remote_url = "https://github.com/Drentis/TelegramAssistant.git"
 
             subprocess.run(['git', 'remote', 'add', 'origin', remote_url], cwd=bot_dir, capture_output=True)
             subprocess.run(['git', 'fetch', 'origin'], cwd=bot_dir, capture_output=True, timeout=30)
