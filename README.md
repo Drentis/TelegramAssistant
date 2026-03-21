@@ -80,7 +80,7 @@
 ### Linux сервер:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 ```
 
 ### Windows:

@@ -4,9 +4,9 @@
 # Скрипт быстрого развёртывания TelegramAssistant с GitHub
 # ============================================================
 # Использование:
-#   curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+#   curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 # Или:
-#   wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+#   wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 # ============================================================
 
 set -e
@@ -422,7 +422,7 @@ case "$1" in
             echo "✓ Бот полностью удалён"
             echo ""
             echo "Для повторной установки выполните:"
-            echo "  curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash"
+            echo "  curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash"
         else
             echo "❌ Удаление отменено"
         fi

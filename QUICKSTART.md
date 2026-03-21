@@ -5,12 +5,12 @@
 ### На Linux сервере:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 ```
 
 **Или через wget:**
 ```bash
-wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 ```
 
 ---
@@ -20,7 +20,7 @@ wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deplo
 Открой PowerShell и выполни:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/install.ps1') | iex
+powershell -ExecutionPolicy Bypass -File (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/install.ps1') | iex
 ```
 
 **Или скачай и запусти вручную:**

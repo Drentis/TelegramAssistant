@@ -9,12 +9,12 @@
 ### Linux сервер:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 ```
 
 **Или через wget:**
 ```bash
-wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash
 ```
 
 ---
