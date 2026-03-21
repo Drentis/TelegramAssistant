@@ -83,7 +83,13 @@ if [ -d ".git" ]; then
     # Принудительно переключаемся на master
     su -s /bin/bash "$BOT_USER" -c "git fetch origin 2>/dev/null" || true
     su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
-    su -s /bin/bash "$BOT_USER" -c "git reset --hard origin/master 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git reset --hard origin/master 2>/dev/null" || {
+        # Если reset не сработал, пробуем альтернативный способ
+        echo -e "${YELLOW}   reset --hard не сработал, пробуем альтернативу...${NC}"
+        rm -rf .git
+        su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || true
+        su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
+    }
     echo -e "${GREEN}   ✓ Репозиторий обновлён${NC}"
 else
     echo -e "${YELLOW}   Клонирование репозитория...${NC}"
@@ -94,6 +100,20 @@ else
     }
     su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
     echo -e "${GREEN}   ✓ Репозиторий клонирован${NC}"
+fi
+
+# Проверяем наличие requirements.txt
+if [ ! -f "$BOT_DIR/requirements.txt" ]; then
+    echo -e "${RED}   ❌ requirements.txt не найден!${NC}"
+    echo -e "${YELLOW}   Пробуем перезагрузить репозиторий...${NC}"
+    rm -rf "$BOT_DIR"/*
+    rm -rf "$BOT_DIR"/.*  2>/dev/null || true
+    su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || {
+        echo -e "${RED}   ❌ Не удалось загрузить файлы${NC}"
+        exit 1
+    }
+    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
+    echo -e "${GREEN}   ✓ Репозиторий перезагружен${NC}"
 fi
 
 # ============================================================
@@ -431,7 +451,7 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.6" ;;
+    version) echo "TelegramAssistant v1.0.7" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF

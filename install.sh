@@ -2,7 +2,7 @@
 
 # ============================================================
 # TelegramAssistant - Быстрая установка
-# Версия: 1.0.6
+# Версия: 1.0.7
 # ============================================================
 # Использование:
 #   curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/install.sh | sudo bash
