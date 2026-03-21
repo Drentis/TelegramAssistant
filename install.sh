@@ -323,7 +323,19 @@ case "$1" in
         echo "Обновление бота..."
         systemctl stop telegramassistant
         cd /opt/telegramassistant
-        git pull
+        
+        # Проверяем наличие .git директории
+        if [ ! -d ".git" ]; then
+            echo "⚠️  .git директория не найдена. Инициализация..."
+            git init
+            git remote add origin https://github.com/Drentis/TelegramAssistant.git
+            git fetch origin
+            git checkout -f main
+            git reset --hard origin/main
+        else
+            git pull
+        fi
+        
         /opt/telegramassistant/venv/bin/pip install -r /opt/telegramassistant/requirements.txt
         chown -R telegramassistant:telegramassistant /opt/telegramassistant
         systemctl start telegramassistant
@@ -413,7 +425,7 @@ case "$1" in
         fi
         ;;
     version)
-        echo "TelegramAssistant v1.0.1"
+        echo "TelegramAssistant v1.0.2"
         ;;
     *)
         echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}"

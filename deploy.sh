@@ -311,7 +311,20 @@ case "$1" in
     update)
         echo "Обновление бота..."
         systemctl stop telegramassistant
-        cd /opt/telegramassistant && git pull
+        cd /opt/telegramassistant
+        
+        # Проверяем наличие .git директории
+        if [ ! -d ".git" ]; then
+            echo "⚠️  .git директория не найдена. Инициализация..."
+            git init
+            git remote add origin https://github.com/Drentis/TelegramAssistant.git
+            git fetch origin
+            git checkout -f main
+            git reset --hard origin/main
+        else
+            git pull
+        fi
+        
         /opt/telegramassistant/venv/bin/pip install -r requirements.txt -q
         chown -R telegramassistant:telegramassistant /opt/telegramassistant
         systemctl start telegramassistant
@@ -369,20 +382,52 @@ case "$1" in
         ;;
     delete)
         echo "⚠️  УДАЛЕНИЕ БОТА"
-        read -p "Вы уверены? Введите 'yes': " confirm
+        echo ""
+        echo "Это действие удалит:"
+        echo "  • Все данные пользователей"
+        echo "  • Все настройки бота"
+        echo "  • Системный сервис"
+        echo "  • Файлы бота"
+        echo "  • Пользователя telegramassistant"
+        echo "  • Команду telegramactl"
+        echo ""
+        echo "⚠️  ВНИМАНИЕ: Это действие НЕОБРАТИМО!"
+        echo ""
+        read -p "Вы уверены? Введите 'yes' для подтверждения: " confirm
         if [ "$confirm" = "yes" ]; then
-            systemctl stop telegramassistant && systemctl disable telegramassistant
-            rm /etc/systemd/system/telegramassistant.service
+            echo ""
+            echo "🔄 Остановка бота..."
+            systemctl stop telegramassistant 2>/dev/null || true
+            systemctl disable telegramassistant 2>/dev/null || true
+            
+            echo "🗑 Удаление сервиса..."
+            rm -f /etc/systemd/system/telegramassistant.service
             systemctl daemon-reload
+            
+            # Удаляем логи
+            echo "🗑 Удаление логов..."
+            journalctl --rotate 2>/dev/null || true
+            rm -f /var/log/journal/*telegramassistant* 2>/dev/null || true
+            
+            echo "🗑 Удаление файлов бота..."
             rm -rf /opt/telegramassistant
+            
+            echo "🗑 Удаление пользователя..."
             userdel -r telegramassistant 2>/dev/null || true
-            rm /usr/local/bin/telegramactl
+            
+            echo "🗑 Удаление команды telegramactl..."
+            rm -f /usr/local/bin/telegramactl
+            
+            echo ""
             echo "✓ Бот полностью удалён"
+            echo ""
+            echo "Для повторной установки выполните:"
+            echo "  curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/main/deploy.sh | sudo bash"
         else
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.1" ;;
+    version) echo "TelegramAssistant v1.0.2" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF

@@ -1872,30 +1872,31 @@ async def handle_admin_update_bot_callback(callback: types.CallbackQuery):
         import os
 
         # Переходим в директорию бота
-        bot_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        bot_dir = "/opt/telegramassistant"
 
         # Проверяем, есть ли .git директория
         git_dir = os.path.join(bot_dir, '.git')
-        
+
         if not os.path.exists(git_dir):
             # Если нет .git, инициализируем git и добавляем remote
             await callback.message.answer("⚙️ **Первичная настройка git...**\n\nЭто займёт несколько секунд.", parse_mode="Markdown")
-            
+
             # Инициализируем git
             subprocess.run(['git', 'init'], cwd=bot_dir, capture_output=True)
-            
+
             # Добавляем remote с токеном
             if GITHUB_TOKEN:
-                remote_url = f"https://{GITHUB_TOKEN}@github.com/Drentis/TG_Assistant.git"
+                remote_url = f"https://{GITHUB_TOKEN}@github.com/Drentis/TelegramAssistant.git"
             else:
                 # Пробуем без токена (для публичных репозиториев)
-                remote_url = "https://github.com/Drentis/TG_Assistant.git"
+                remote_url = "https://github.com/Drentis/TelegramAssistant.git"
                 await callback.message.answer("⚠️ **GITHUB_TOKEN не найден!**\n\nДля обновления через Telegram добавьте токен в .env:\n```\nGITHUB_TOKEN=ghp_xxxxx\n```\nСоздать токен: https://github.com/settings/tokens", parse_mode="Markdown")
-            
+
             subprocess.run(['git', 'remote', 'add', 'origin', remote_url], cwd=bot_dir, capture_output=True)
-            subprocess.run(['git', 'fetch', 'origin'], cwd=bot_dir, capture_output=True)
-            subprocess.run(['git', 'reset', '--hard', 'origin/main'], cwd=bot_dir, capture_output=True)
-            
+            subprocess.run(['git', 'fetch', 'origin'], cwd=bot_dir, capture_output=True, timeout=30)
+            subprocess.run(['git', 'checkout', '-f', 'main'], cwd=bot_dir, capture_output=True)
+            subprocess.run(['git', 'reset', '--hard', 'origin/main'], cwd=bot_dir, capture_output=True, timeout=30)
+
             result_stdout = "✓ Репозиторий инициализирован\n✓ Файлы обновлены"
             result_stderr = ""
         else:
@@ -1904,7 +1905,8 @@ async def handle_admin_update_bot_callback(callback: types.CallbackQuery):
                 ['git', 'pull'],
                 cwd=bot_dir,
                 capture_output=True,
-                text=True
+                text=True,
+                timeout=60
             )
             result_stdout = result.stdout
             result_stderr = result.stderr
@@ -1916,7 +1918,8 @@ async def handle_admin_update_bot_callback(callback: types.CallbackQuery):
             # Устанавливаем зависимости
             subprocess.run(
                 [f'{bot_dir}/venv/bin/pip', 'install', '-r', f'{bot_dir}/requirements.txt'],
-                capture_output=True
+                capture_output=True,
+                timeout=120
             )
 
             await callback.message.answer(
@@ -1926,6 +1929,8 @@ async def handle_admin_update_bot_callback(callback: types.CallbackQuery):
                 parse_mode="Markdown"
             )
 
+    except subprocess.TimeoutExpired:
+        await callback.message.answer("❌ **Превышено время ожидания.**\n\nПроверьте подключение к интернету и попробуйте ещё раз.", parse_mode="Markdown")
     except Exception as e:
         await callback.message.answer(f"❌ **Произошла ошибка:**\n```{str(e)}```", parse_mode="Markdown")
 

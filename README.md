@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![aiogram](https://img.shields.io/badge/aiogram-3.x-green.svg)](https://docs.aiogram.dev/)
-[![Release](https://img.shields.io/badge/release-v1.0.1-brightgreen.svg)](https://github.com/Drentis/TelegramAssistant/releases/tag/v1.0.1)
+[![Release](https://img.shields.io/badge/release-v1.0.2-brightgreen.svg)](https://github.com/Drentis/TelegramAssistant/releases/tag/v1.0.2)
 
 Многофункциональный бот для ведения списков покупок, дел, учебных задач, идей и рецептов с автоматической классификацией товаров и погодными уведомлениями.
 
