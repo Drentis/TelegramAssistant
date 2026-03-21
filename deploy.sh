@@ -79,8 +79,12 @@ echo -e "\n${MAGENTA}[4/8] Загрузка файлов бота...${NC}"
 cd "$BOT_DIR"
 
 if [ -d ".git" ]; then
-    echo -e "${YELLOW}   Репозиторий уже существует, делаем pull...${NC}"
-    su -s /bin/bash "$BOT_USER" -c "git pull origin $BRANCH 2>/dev/null" || true
+    echo -e "${YELLOW}   Репозиторий уже существует, обновляем...${NC}"
+    # Принудительно переключаемся на master
+    su -s /bin/bash "$BOT_USER" -c "git fetch origin 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git reset --hard origin/master 2>/dev/null" || true
+    echo -e "${GREEN}   ✓ Репозиторий обновлён${NC}"
 else
     echo -e "${YELLOW}   Клонирование репозитория...${NC}"
     su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || {
@@ -88,7 +92,7 @@ else
         echo -e "${YELLOW}   Проверьте URL репозитория${NC}"
         exit 1
     }
-    su -s /bin/bash "$BOT_USER" -c "git checkout $BRANCH 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
     echo -e "${GREEN}   ✓ Репозиторий клонирован${NC}"
 fi
 
@@ -427,7 +431,7 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.5" ;;
+    version) echo "TelegramAssistant v1.0.6" ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF
