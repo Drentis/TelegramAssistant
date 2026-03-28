@@ -908,9 +908,9 @@ async def handle_edit_list_callback(callback: types.CallbackQuery):
     data = callback.data.replace("edit_", "")
     parts = data.split("_")
 
-    if len(parts) >= 2:
+    if len(parts) >= 1:
         list_type = parts[0]
-        category = parts[1] if len(parts) > 1 else None
+        category = parts[1] if len(parts) > 1 and parts[1] else None
 
         # Получаем настройки пользователя
         settings = await db.get_category_settings(callback.from_user.id)
