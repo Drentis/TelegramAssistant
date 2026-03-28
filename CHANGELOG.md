@@ -4,6 +4,37 @@
 
 ---
 
+## [1.0.20] - 2026-03-28
+
+### 🐛 Исправления
+
+**🔧 Расширенное логирование кнопки редактирования:**
+- ✅ **Добавлено подробное логирование** в handle_edit_list_callback
+- ✅ **Вывод типа данных** и ключей элементов базы данных
+- ✅ **Трассировка ошибок** с traceback для отладки
+- ✅ **Безопасный доступ** к item.get('task') с проверкой hasattr
+
+**✨ Улучшения:**
+- Детальные DEBUG логи для каждой стадии обработки callback
+- Логирование типа первого элемента и его ключей
+- Обработка ошибок с полным traceback
+
+**📝 Для диагностики:**
+После нажатия на кнопку редактирования в логах будет:
+```
+[DEBUG] ========== handle_edit_list_callback ==========
+[DEBUG] User ID: 123456789
+[DEBUG] Callback data: edit_todo
+[DEBUG] list_type: todo
+[DEBUG] category: None
+[DEBUG] Processing todo list...
+[DEBUG] Got X todo items
+[DEBUG] First item type: <class 'aiosqlite.Row'>
+[DEBUG] First item keys: dict_keys(['id', 'user_id', 'task', 'due_date', 'reminded', 'created_at'])
+```
+
+---
+
 ## [1.0.19] - 2026-03-28
 
 ### ✨ Новое
