@@ -42,6 +42,50 @@ echo -e "\n${YELLOW}📦 Репозиторий: $REPO_URL${NC}"
 echo -e "${YELLOW}📦 Ветка: $BRANCH${NC}"
 
 # ============================================================
+# ПОЛНОЕ УДАЛЕНИЕ СТАРОЙ ВЕРСИИ
+# ============================================================
+echo -e "\n${RED}⚠️  ПРОВЕРКА НАЛИЧИЯ СТАРОЙ ВЕРСИИ...${NC}"
+
+# Останавливаем старый сервис если есть
+if systemctl is-active --quiet telegramassistant 2>/dev/null; then
+    echo -e "${YELLOW}   Остановка старого сервиса...${NC}"
+    systemctl stop telegramassistant
+    systemctl disable telegramassistant
+    echo -e "${GREEN}   ✓ Сервис остановлен${NC}"
+fi
+
+# Удаляем старый systemd сервис
+if [ -f /etc/systemd/system/telegramassistant.service ]; then
+    echo -e "${YELLOW}   Удаление старого systemd сервиса...${NC}"
+    rm -f /etc/systemd/system/telegramassistant.service
+    systemctl daemon-reload
+    echo -e "${GREEN}   ✓ Сервис удалён${NC}"
+fi
+
+# Удаляем старую директорию бота
+if [ -d "$BOT_DIR" ]; then
+    echo -e "${YELLOW}   Удаление старой директории $BOT_DIR...${NC}"
+    rm -rf "$BOT_DIR"
+    echo -e "${GREEN}   ✓ Директория удалена${NC}"
+fi
+
+# Удаляем пользователя если существует
+if id "$BOT_USER" &>/dev/null; then
+    echo -e "${YELLOW}   Удаление старого пользователя $BOT_USER...${NC}"
+    userdel -r "$BOT_USER" 2>/dev/null || userdel "$BOT_USER" 2>/dev/null || true
+    echo -e "${GREEN}   ✓ Пользователь удалён${NC}"
+fi
+
+# Удаляем telegramactl если есть
+if [ -f /usr/local/bin/telegramactl ]; then
+    echo -e "${YELLOW}   Удаление старого telegramactl...${NC}"
+    rm -f /usr/local/bin/telegramactl
+    echo -e "${GREEN}   ✓ telegramactl удалён${NC}"
+fi
+
+echo -e "${GREEN}   ✓ Старая версия полностью удалена${NC}"
+
+# ============================================================
 # Обновление системы
 # ============================================================
 echo -e "\n${MAGENTA}[1/8] Обновление пакетов...${NC}"
