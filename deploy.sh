@@ -133,7 +133,7 @@ su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || {
     echo -e "${YELLOW}   Проверьте URL репозитория${NC}"
     exit 1
 }
-su -s /bin/bash "$BOT_USER" -c "git checkout main 2>/dev/null" || true
+su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
 echo -e "${GREEN}   ✓ Репозиторий клонирован${NC}"
 
 # Проверяем наличие requirements.txt
@@ -146,7 +146,7 @@ if [ ! -f "$BOT_DIR/requirements.txt" ]; then
         echo -e "${RED}   ❌ Не удалось загрузить файлы${NC}"
         exit 1
     }
-    su -s /bin/bash "$BOT_USER" -c "git checkout main 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
     echo -e "${GREEN}   ✓ Репозиторий перезагружен${NC}"
 fi
 
@@ -355,8 +355,8 @@ case "$1" in
         fi
         
         git fetch origin -q
-        git checkout -f main -q
-        git reset --hard origin/main -q
+        git checkout -f master -q
+        git reset --hard origin/master -q
         
         echo "📦 Установка зависимостей..."
         "$BOT_DIR/venv/bin/pip" install -r "$BOT_DIR/requirements.txt" -q
@@ -463,7 +463,15 @@ case "$1" in
             echo "❌ Удаление отменено"
         fi
         ;;
-    version) echo "TelegramAssistant v1.0.10" ;;
+    version)
+        # Динамическое получение версии из main.py
+        if [ -f "$BOT_DIR/main.py" ]; then
+            VERSION=$(grep -oP 'BOT_VERSION = "\K[0-9.]+' "$BOT_DIR/main.py" 2>/dev/null || echo "unknown")
+            echo "TelegramAssistant v$VERSION"
+        else
+            echo "TelegramAssistant v1.0.17"
+        fi
+        ;;
     *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
 esac
 EOF
