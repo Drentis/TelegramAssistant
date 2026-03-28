@@ -338,32 +338,65 @@ case "$1" in
     restart) systemctl restart telegramassistant ;;
     status) systemctl status telegramassistant ;;
     logs) journalctl -u telegramassistant -f ;;
+    reinstall)
+        echo "🔄 Полная переустановка telegramactl..."
+        curl -sSL "https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh" -o /tmp/deploy_new.sh
+        if [ -f /tmp/deploy_new.sh ]; then
+            # Извлекаем только секцию telegramactl из нового скрипта
+            NEW_TELEGRAMACT=$(sed -n '/^cat > \/usr\/local\/bin\/telegramactl/,/^EOF$/p' /tmp/deploy_new.sh)
+            if [ -n "$NEW_TELEGRAMACT" ]; then
+                echo "$NEW_TELEGRAMACT" | bash
+                chmod +x /usr/local/bin/telegramactl
+                echo "✅ telegramactl переустановлен"
+            else
+                echo "❌ Не удалось извлечь скрипт telegramactl"
+            fi
+        else
+            echo "❌ Не удалось загрузить скрипт"
+        fi
+        rm -f /tmp/deploy_new.sh
+        ;;
     update)
         echo "🔄 Обновление бота..."
         systemctl stop telegramassistant 2>/dev/null || true
-        
+
         # Исправляем проблему с правами git
         git config --global --add safe.directory "$BOT_DIR" 2>/dev/null || true
-        
+
         cd "$BOT_DIR"
-        
+
         # Проверяем наличие .git директории
         if [ ! -d ".git" ]; then
             echo "⚠️  .git директория не найдена. Инициализация..."
             git init -q
             git remote add origin https://github.com/Drentis/TelegramAssistant.git
         fi
-        
+
+        # Полное обновление с веткой master
+        echo "📥 Загрузка обновлений..."
         git fetch origin -q
         git checkout -f master -q
         git reset --hard origin/master -q
-        
+
         echo "📦 Установка зависимостей..."
         "$BOT_DIR/venv/bin/pip" install -r "$BOT_DIR/requirements.txt" -q
-        
+
         echo "🔧 Исправление прав..."
         chown -R "$BOT_USER:$BOT_USER" "$BOT_DIR"
-        
+
+        # ОБНОВЛЯЕМ telegramactl
+        echo "🔄 Обновление telegramactl..."
+        curl -sSL "https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh" -o /tmp/deploy_new.sh 2>/dev/null
+        if [ -f /tmp/deploy_new.sh ]; then
+            # Извлекаем только секцию telegramactl из нового скрипта
+            NEW_TELEGRAMACT=$(sed -n '/^cat > \/usr\/local\/bin\/telegramactl/,/^EOF$/p' /tmp/deploy_new.sh)
+            if [ -n "$NEW_TELEGRAMACT" ]; then
+                echo "$NEW_TELEGRAMACT" | bash
+                echo "✅ telegramactl обновлён"
+            fi
+        fi
+        rm -f /tmp/deploy_new.sh
+
         systemctl start telegramassistant
         echo "✅ Обновлено!"
         ;;
@@ -469,10 +502,10 @@ case "$1" in
             VERSION=$(grep -oP 'BOT_VERSION = "\K[0-9.]+' "$BOT_DIR/main.py" 2>/dev/null || echo "unknown")
             echo "TelegramAssistant v$VERSION"
         else
-            echo "TelegramAssistant v1.0.17"
+            echo "TelegramAssistant v1.0.18"
         fi
         ;;
-    *) echo "Использование: $0 {start|stop|restart|status|logs|update|edit|delete|version}" ;;
+    *) echo "Использование: $0 {start|stop|restart|status|logs|update|reinstall|delete|version}" ;;
 esac
 EOF
 
