@@ -858,6 +858,53 @@ async def handle_shopping_button(message: types.Message):
     )
 
 
+async def handle_back_to_shopping_callback(callback: types.CallbackQuery):
+    """
+    Обработчик кнопки 'Назад к категориям покупок'.
+
+    Args:
+        callback: CallbackQuery от пользователя
+    """
+    # Получаем настройки пользователя
+    user_id = callback.from_user.id
+    settings = await db.get_category_settings(user_id)
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"🥕 {settings['magnit_name']} ({settings.get('magnit_desc', 'Продукты')})", callback_data="shopping_magnit")],
+            [InlineKeyboardButton(text=f"🏠 {settings['fixprice_name']} ({settings.get('fixprice_desc', 'Бытовое')})", callback_data="shopping_fixprice")],
+            [InlineKeyboardButton(text=f"📦 {settings['other_name']} ({settings.get('other_desc', 'Другое')})", callback_data="shopping_other")],
+            [InlineKeyboardButton(text="🔙 Назад в меню", callback_data="back_to_main")]
+        ]
+    )
+
+    text = (
+        f"🛒 **Список покупок**\n\n"
+        f"🥕 **{settings['magnit_name']}** — {settings.get('magnit_desc', 'Продукты')}\n"
+        f"🏠 **{settings['fixprice_name']}** — {settings.get('fixprice_desc', 'Бытовое')}\n"
+        f"📦 **{settings['other_name']}** — {settings.get('other_desc', 'Другое')}\n\n"
+        f"Чтобы добавить товар, напишите:\n"
+        f"`{settings.get('buy_trigger', 'купить')}` молоко\n\n"
+        f"Можно использовать названия магазинов:\n"
+        f"`{settings['magnit_name']} {settings.get('buy_trigger', 'купить')}` хлеб\n\n"
+        f"Или сокращения:\n"
+        f"`{settings['magnit_short']} {settings.get('buy_trigger', 'купить')}`...\n"
+        f"`{settings['fixprice_short']} {settings.get('buy_trigger', 'купить')}`...\n"
+        f"`{settings['other_short']} {settings.get('buy_trigger', 'купить')}`...\n\n"
+        "Выберите магазин для просмотра:"
+    )
+
+    try:
+        await callback.message.answer(
+            text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+        await callback.answer()
+    except Exception:
+        pass
+
+
 async def handle_shopping_callback(callback: types.CallbackQuery):
     """Обработка выбора категории покупок."""
     category = callback.data.replace("shopping_", "")
@@ -3073,7 +3120,7 @@ async def main():
     dp.callback_query(F.data.startswith("toggle_"))(handle_toggle_item_callback)
     dp.callback_query(F.data.startswith("clear_"))(handle_clear_list_callback)
     dp.callback_query(F.data == "back_to_main")(handle_back_callback)
-    dp.callback_query(F.data == "back_to_shopping")(handle_shopping_button)
+    dp.callback_query(F.data == "back_to_shopping")(handle_back_to_shopping_callback)
     dp.callback_query(F.data == "back_to_settings")(handle_back_to_settings_callback)
     dp.callback_query(F.data.startswith("settings_magnit"))(handle_settings_category_callback)
     dp.callback_query(F.data.startswith("settings_fixprice"))(handle_settings_category_callback)
