@@ -33,7 +33,11 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# URL репозитория (можно передать как аргумент)
+# ============================================================
+# КОНСТАНТЫ
+# ============================================================
+BOT_USER="telegramassistant"
+BOT_DIR="/opt/telegramassistant"
 DEFAULT_REPO="https://github.com/Drentis/TelegramAssistant.git"
 REPO_URL="${1:-$DEFAULT_REPO}"
 BRANCH="${2:-main}"
@@ -100,9 +104,6 @@ apt install -y -qq python3 python3-pip python3-venv git curl
 # ============================================================
 # Создание пользователя и директории
 # ============================================================
-BOT_USER="telegramassistant"
-BOT_DIR="/opt/telegramassistant"
-
 echo -e "\n${MAGENTA}[3/8] Создание пользователя и директории...${NC}"
 
 if ! id "$BOT_USER" &>/dev/null; then
@@ -123,33 +124,17 @@ echo -e "\n${MAGENTA}[4/8] Загрузка файлов бота...${NC}"
 
 # Исправляем проблему с правами git (dubious ownership)
 git config --global --add safe.directory "$BOT_DIR" 2>/dev/null || true
-git config --global --add safe.directory /opt/telegramassistant 2>/dev/null || true
 
 cd "$BOT_DIR"
 
-if [ -d ".git" ]; then
-    echo -e "${YELLOW}   Репозиторий уже существует, обновляем...${NC}"
-    # Принудительно переключаемся на master
-    su -s /bin/bash "$BOT_USER" -c "git fetch origin 2>/dev/null" || true
-    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
-    su -s /bin/bash "$BOT_USER" -c "git reset --hard origin/master 2>/dev/null" || {
-        # Если reset не сработал, пробуем альтернативный способ
-        echo -e "${YELLOW}   reset --hard не сработал, пробуем альтернативу...${NC}"
-        rm -rf .git
-        su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || true
-        su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
-    }
-    echo -e "${GREEN}   ✓ Репозиторий обновлён${NC}"
-else
-    echo -e "${YELLOW}   Клонирование репозитория...${NC}"
-    su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || {
-        echo -e "${RED}   ❌ Не удалось клонировать репозиторий${NC}"
-        echo -e "${YELLOW}   Проверьте URL репозитория${NC}"
-        exit 1
-    }
-    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
-    echo -e "${GREEN}   ✓ Репозиторий клонирован${NC}"
-fi
+echo -e "${YELLOW}   Клонирование репозитория...${NC}"
+su -s /bin/bash "$BOT_USER" -c "git clone $REPO_URL . 2>/dev/null" || {
+    echo -e "${RED}   ❌ Не удалось клонировать репозиторий${NC}"
+    echo -e "${YELLOW}   Проверьте URL репозитория${NC}"
+    exit 1
+}
+su -s /bin/bash "$BOT_USER" -c "git checkout main 2>/dev/null" || true
+echo -e "${GREEN}   ✓ Репозиторий клонирован${NC}"
 
 # Проверяем наличие requirements.txt
 if [ ! -f "$BOT_DIR/requirements.txt" ]; then
@@ -161,7 +146,7 @@ if [ ! -f "$BOT_DIR/requirements.txt" ]; then
         echo -e "${RED}   ❌ Не удалось загрузить файлы${NC}"
         exit 1
     }
-    su -s /bin/bash "$BOT_USER" -c "git checkout master 2>/dev/null" || true
+    su -s /bin/bash "$BOT_USER" -c "git checkout main 2>/dev/null" || true
     echo -e "${GREEN}   ✓ Репозиторий перезагружен${NC}"
 fi
 
@@ -287,17 +272,17 @@ echo -e "${GREEN}   ✓ Файл .env создан${NC}"
 # ============================================================
 echo -e "\n${MAGENTA}[7/8] Настройка автозапуска...${NC}"
 
-cat > /etc/systemd/system/telegramassistant.service << 'EOF'
+cat > /etc/systemd/system/telegramassistant.service << EOF
 [Unit]
 Description=TelegramAssistant Bot Service
 After=network.target
 
 [Service]
 Type=simple
-User=telegramassistant
-Group=telegramassistant
-WorkingDirectory=/opt/telegramassistant
-ExecStart=/opt/telegramassistant/venv/bin/python /opt/telegramassistant/main.py
+User=$BOT_USER
+Group=$BOT_USER
+WorkingDirectory=$BOT_DIR
+ExecStart=$BOT_DIR/venv/bin/python $BOT_DIR/main.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -344,6 +329,8 @@ fi
 cat > /usr/local/bin/telegramactl << 'EOF'
 #!/bin/bash
 ENV_FILE="/opt/telegramassistant/.env"
+BOT_USER="telegramassistant"
+BOT_DIR="/opt/telegramassistant"
 
 case "$1" in
     start) systemctl start telegramassistant ;;
@@ -352,29 +339,33 @@ case "$1" in
     status) systemctl status telegramassistant ;;
     logs) journalctl -u telegramassistant -f ;;
     update)
-        echo "Обновление бота..."
-        systemctl stop telegramassistant
-        cd /opt/telegramassistant
-
+        echo "🔄 Обновление бота..."
+        systemctl stop telegramassistant 2>/dev/null || true
+        
         # Исправляем проблему с правами git
-        git config --global --add safe.directory /opt/telegramassistant 2>/dev/null || true
-
+        git config --global --add safe.directory "$BOT_DIR" 2>/dev/null || true
+        
+        cd "$BOT_DIR"
+        
         # Проверяем наличие .git директории
         if [ ! -d ".git" ]; then
             echo "⚠️  .git директория не найдена. Инициализация..."
-            git init
+            git init -q
             git remote add origin https://github.com/Drentis/TelegramAssistant.git
-            git fetch origin
-            git checkout -f main
-            git reset --hard origin/main
-        else
-            git pull
         fi
         
-        /opt/telegramassistant/venv/bin/pip install -r requirements.txt -q
-        chown -R telegramassistant:telegramassistant /opt/telegramassistant
+        git fetch origin -q
+        git checkout -f main -q
+        git reset --hard origin/main -q
+        
+        echo "📦 Установка зависимостей..."
+        "$BOT_DIR/venv/bin/pip" install -r "$BOT_DIR/requirements.txt" -q
+        
+        echo "🔧 Исправление прав..."
+        chown -R "$BOT_USER:$BOT_USER" "$BOT_DIR"
+        
         systemctl start telegramassistant
-        echo "✓ Обновлено!"
+        echo "✅ Обновлено!"
         ;;
     edit)
         echo "╔══════════════════════════════════════════════════════════╗"
@@ -445,27 +436,26 @@ case "$1" in
             echo "🔄 Остановка бота..."
             systemctl stop telegramassistant 2>/dev/null || true
             systemctl disable telegramassistant 2>/dev/null || true
-            
+
             echo "🗑 Удаление сервиса..."
             rm -f /etc/systemd/system/telegramassistant.service
             systemctl daemon-reload
-            
-            # Удаляем логи
+
             echo "🗑 Удаление логов..."
             journalctl --rotate 2>/dev/null || true
             rm -f /var/log/journal/*telegramassistant* 2>/dev/null || true
-            
+
             echo "🗑 Удаление файлов бота..."
-            rm -rf /opt/telegramassistant
-            
+            rm -rf "$BOT_DIR"
+
             echo "🗑 Удаление пользователя..."
             userdel -r telegramassistant 2>/dev/null || true
-            
+
             echo "🗑 Удаление команды telegramactl..."
             rm -f /usr/local/bin/telegramactl
-            
+
             echo ""
-            echo "✓ Бот полностью удалён"
+            echo "✅ Бот полностью удалён"
             echo ""
             echo "Для повторной установки выполните:"
             echo "  curl -sSL https://raw.githubusercontent.com/Drentis/TelegramAssistant/master/deploy.sh | sudo bash"
