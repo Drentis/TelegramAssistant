@@ -955,7 +955,8 @@ async def get_weather(city: str) -> dict:
                         "icon": data["weather"][0]["icon"],
                         "humidity": data["main"]["humidity"],
                         "wind_speed": data["wind"]["speed"],
-                        "city": data["name"]
+                        "city": data["name"],
+                        "timezone": data.get("timezone", 0)  # Смещение в секундах от UTC
                     }
                 elif response.status == 404:
                     return {"error": "Город не найден"}
@@ -1218,8 +1219,13 @@ async def handle_shopping_message(message: types.Message, state: FSMContext):
     text_lower = text.lower()
 
     # Игнорируем сообщения, которые являются кнопками меню
-    menu_buttons = ["🛒 список покупок", "📋 список дел", "📚 учёба", "💡 идеи", "🍳 рецепты", "ℹ️ инфо", "🌤 погода", "⚙️ настройки"]
+    menu_buttons = ["🛒 список покупок", "📋 список дел", "📚 учёба", "🍳 рецепты", "ℹ️ инфо", "🌤 погода", "⚙️ настройки"]
     if text_lower in menu_buttons:
+        return
+    
+    # Обработка кнопки "💡 Идеи" — показываем список идей
+    if text_lower == "💡 идеи":
+        await handle_ideas_view(message)
         return
 
     # Получаем настройки пользователя
@@ -2053,22 +2059,28 @@ async def handle_weather_time_input(message: types.Message, state: FSMContext):
     """Установка времени отправки погоды."""
     time_text = message.text.strip()
 
-    # Проверяем формат времени (ЧЧ:ММ)
-    if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', time_text):
+    # Проверяем формат времени (ЧЧ:ММ или Ч:ММ)
+    time_match = re.match(r'^([0-9]|0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$', time_text)
+    if not time_match:
         await message.answer(
             "❌ Неверный формат времени.\n\n"
-            "Используйте формат ЧЧ:ММ (например, 07:00, 08:30, 20:00)\n\n"
+            "Используйте формат ЧЧ:ММ (например, 7:00, 07:00, 08:30, 20:00)\n\n"
             "Попробуйте ещё раз:",
             parse_mode="Markdown"
         )
         return
+    
+    # Нормализуем время до формата ЧЧ:ММ (с ведущим нулём)
+    hour = int(time_match.group(1))
+    minute = int(time_match.group(2))
+    normalized_time = f"{hour:02d}:{minute:02d}"
 
-    await db.update_category_settings(message.from_user.id, weather_time=time_text)
+    await db.update_category_settings(message.from_user.id, weather_time=normalized_time)
     await state.set_state(None)
 
     await message.answer(
-        f"✅ Время отправки установлено: **{time_text}**\n\n"
-        f"Теперь прогноз погоды будет приходить ежедневно в {time_text}",
+        f"✅ Время отправки установлено: **{normalized_time}**\n\n"
+        f"Теперь прогноз погоды будет приходить ежедневно в {normalized_time}",
         parse_mode="Markdown"
     )
     # Возвращаем настройки
@@ -2629,11 +2641,10 @@ async def reminder_scheduler(bot: Bot):
 async def weather_scheduler(bot: Bot):
     """Планировщик погоды (каждый день в настроенное время)."""
     last_sent = {}  # {user_id: date} - отслеживаем, кому уже отправили сегодня
+    city_timezones = {}  # {city: timezone_offset} - кэш часовых поясов
 
     while True:
-        now = datetime.now()
-        current_date = now.date()
-        current_time_str = now.strftime('%H:%M')
+        now_utc = datetime.utcnow()
 
         # Получаем всех пользователей с настроенной погодой
         async with aiosqlite.connect(db.DB_PATH) as db_conn:
@@ -2647,16 +2658,30 @@ async def weather_scheduler(bot: Bot):
             user_id = user['user_id']
             city = user['weather_city']
             user_time = user['weather_time'] if user['weather_time'] else '06:00'
-            
+
             # Преобразуем значения в int (из БД могут приходить как None)
             weather_daily = bool(user['weather_daily']) if user['weather_daily'] is not None else False
             weather_rain = bool(user['weather_rain']) if user['weather_rain'] is not None else False
 
+            # Получаем часовой пояс города (из кэша или из API)
+            tz_offset = city_timezones.get(city)
+            if tz_offset is None:
+                weather_data = await get_weather(city)
+                if weather_data.get("success"):
+                    tz_offset = weather_data.get("timezone", 0)
+                    city_timezones[city] = tz_offset
+                else:
+                    continue  # Пропускаем, если не удалось получить данные
+
+            # Вычисляем местное время города
+            city_now = now_utc + timedelta(seconds=tz_offset)
+            city_time_str = city_now.strftime('%H:%M')
+            city_date = city_now.date()
+
             # Проверяем, наступило ли время отправки для этого пользователя
-            # Проверяем диапазон времени (чтобы не пропустить и не отправить повторно)
-            if current_time_str == user_time:
+            if city_time_str == user_time:
                 # Проверяем, не отправляли ли уже сегодня
-                if user_id not in last_sent or last_sent[user_id] != current_date:
+                if user_id not in last_sent or last_sent[user_id] != city_date:
                     try:
                         # Утренний прогноз (если включено)
                         if weather_daily:
@@ -2667,13 +2692,13 @@ async def weather_scheduler(bot: Bot):
                             await send_rain_alert(bot, user_id, city)
 
                         # Отмечаем, что сегодня уже отправили
-                        last_sent[user_id] = current_date
+                        last_sent[user_id] = city_date
                     except Exception as e:
                         # Игнорируем ошибки отправки, но продолжаем работу
                         pass
 
-        # Сбрасываем счётчик отправленных каждый день в 00:01
-        if now.hour == 0 and now.minute == 1:
+        # Сбрасываем счётчик отправленных каждый день в 00:01 UTC
+        if now_utc.hour == 0 and now_utc.minute == 1:
             last_sent.clear()
 
         # Проверяем каждую минуту
@@ -2699,11 +2724,11 @@ async def main():
     dp.message(F.text == "🛒 Список покупок")(handle_shopping_button)
     dp.message(F.text == "📋 Список дел")(handle_todo_view)
     dp.message(F.text == "📚 Учёба")(handle_study_view)
-    dp.message(F.text == "💡 Идеи")(handle_ideas_view)
     dp.message(F.text == "🍳 Рецепты")(handle_recipes_view)
     dp.message(F.text == "ℹ️ Инфо")(handle_info_view)
     dp.message(F.text == "🌤 Погода")(handle_weather_button)
     dp.message(F.text == "⚙️ Настройки")(handle_settings_button)
+    # Кнопка "💡 Идеи" обрабатывается через триггерное слово (handle_shopping_message)
 
     # Обработка ингредиентов рецепта и описания (ДО обработки триггерных слов!)
     dp.message(RecipeState.adding_recipe, ~Command("cancel"))(handle_recipe_ingredient)
