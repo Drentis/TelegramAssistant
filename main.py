@@ -15,11 +15,11 @@ TelegramAssistant - Бот для ведения списков и замето�
 - Прогноз погоды и уведомления о дожде
 - Гибкие настройки (триггеры, видимость кнопок, названия магазинов)
 
-Версия: 1.0.14
+Версия: 1.0.15
 """
 
 # Версия бота
-BOT_VERSION = "1.0.14"
+BOT_VERSION = "1.0.15"
 
 import asyncio
 import subprocess
@@ -985,8 +985,9 @@ async def handle_edit_list_callback(callback: types.CallbackQuery):
 
             try:
                 await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
-            except Exception:
-                pass
+            except Exception as e:
+                # Если не удалось отредактировать, отправляем новое сообщение
+                await callback.message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
         elif list_type == "todo":
             items = await db.get_todo_items(callback.from_user.id)
             text = "📋 **Список дел:**\n\n"
@@ -997,8 +998,9 @@ async def handle_edit_list_callback(callback: types.CallbackQuery):
 
             try:
                 await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
-            except Exception:
-                pass
+            except Exception as e:
+                # Если не удалось отредактировать, отправляем новое сообщение
+                await callback.message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
         elif list_type == "study":
             items = await db.get_study_items(callback.from_user.id)
             text = "📚 **Учёба:**\n\n"
@@ -1009,8 +1011,9 @@ async def handle_edit_list_callback(callback: types.CallbackQuery):
 
             try:
                 await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
-            except Exception:
-                pass
+            except Exception as e:
+                # Если не удалось отредактировать, отправляем новое сообщение
+                await callback.message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
         elif list_type == "ideas":
             items = await db.get_ideas(callback.from_user.id)
             text = "💡 **Идеи:**\n\n"
@@ -1021,8 +1024,9 @@ async def handle_edit_list_callback(callback: types.CallbackQuery):
 
             try:
                 await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
-            except Exception:
-                pass
+            except Exception as e:
+                # Если не удалось отредактировать, отправляем новое сообщение
+                await callback.message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
     await callback.answer()
 
