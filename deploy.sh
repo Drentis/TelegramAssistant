@@ -120,6 +120,11 @@ echo -e "${GREEN}   ✓ Директория $BOT_DIR создана${NC}"
 # Клонирование репозитория
 # ============================================================
 echo -e "\n${MAGENTA}[4/8] Загрузка файлов бота...${NC}"
+
+# Исправляем проблему с правами git (dubious ownership)
+git config --global --add safe.directory "$BOT_DIR" 2>/dev/null || true
+git config --global --add safe.directory /opt/telegramassistant 2>/dev/null || true
+
 cd "$BOT_DIR"
 
 if [ -d ".git" ]; then
@@ -350,7 +355,10 @@ case "$1" in
         echo "Обновление бота..."
         systemctl stop telegramassistant
         cd /opt/telegramassistant
-        
+
+        # Исправляем проблему с правами git
+        git config --global --add safe.directory /opt/telegramassistant 2>/dev/null || true
+
         # Проверяем наличие .git директории
         if [ ! -d ".git" ]; then
             echo "⚠️  .git директория не найдена. Инициализация..."
