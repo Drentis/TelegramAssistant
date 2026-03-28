@@ -4,6 +4,30 @@
 
 ---
 
+## [1.0.16] - 2026-03-28
+
+### 🐛 Исправления
+
+**🔧 Кнопка редактирования списка дел:**
+- ✅ **Исправлен формат callback_data** — теперь `edit_todo` вместо `edit_todo_` (без пустой строки)
+- ✅ **Добавлено отладочное логирование** — выводит callback data, list_type, category в консоль
+- ✅ **Улучшена обработка ошибок** — детальный вывод ошибок edit_text
+
+**✨ Улучшения:**
+- Изменена функция get_items_keyboard для формирования правильного callback_data
+- Обновлена обработка в handle_edit_list_callback для нового формата
+
+**📝 Для разработчиков:**
+- При нажатии на кнопку редактирования в логах будет видно:
+  ```
+  [DEBUG] handle_edit_list_callback: data=edit_todo
+  [DEBUG] list_type=todo, category=None
+  [DEBUG] Processing todo list...
+  [DEBUG] Got X todo items
+  ```
+
+---
+
 ## [1.0.15] - 2026-03-28
 
 ### 🐛 Исправления
