@@ -4,6 +4,21 @@
 
 ---
 
+## [1.0.21] - 2026-03-28
+
+### 🐛 Исправления
+
+**🔧 Критическое исправление aiosqlite.Row:**
+- ✅ **Исправлена ошибка AttributeError** — `sqlite3.Row object has no attribute 'get'`
+- ✅ **Правильный доступ к полям** — используется `item['task']` вместо `item.get('task')`
+- ✅ **Проверка ключей** — `if 'task' in item.keys()` для aiosqlite.Row
+
+**✨ Улучшения:**
+- Исправлен доступ к полям в get_edit_keyboard
+- Исправлен доступ к полям в handle_edit_list_callback
+
+---
+
 ## [1.0.20] - 2026-03-28
 
 ### 🐛 Исправления
